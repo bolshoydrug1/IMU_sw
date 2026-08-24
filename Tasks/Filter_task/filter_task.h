@@ -10,13 +10,15 @@
 #define TASK_FILTER_STACK_SIZE (configMINIMAL_STACK_SIZE * 4)
 #define TASK_FILTER_PRIORITY   (tskIDLE_PRIORITY + 3)
 #define TASK_FILTER_NAME       "Task_Filter"
-#define TASK_FILTER_PERIOD_MS  5
+#define TASK_FILTER_PERIOD_MS  2
 
 typedef struct {
     float q[4];             /* w,x,y,z — усреднённая ориентация после голосования */
     float roll_deg;
     float pitch_deg;
     float yaw_deg;
+    float gyro_dps[3];      /* усреднено по тем же датчикам, что вошли в q */
+    float accel_g[3];
     uint8_t fault_mask;     /* бит0=BMI270, бит1=LSM6DS3TR, бит2=MPU6500 — отбракован голосованием */
     uint32_t timestamp_ms;
 } FusionOutput_t;

@@ -9,7 +9,7 @@
 #define TASK_IMU_STACK_SIZE (configMINIMAL_STACK_SIZE * 3)
 #define TASK_IMU_PRIORITY   (tskIDLE_PRIORITY + 4)
 #define TASK_IMU_NAME       "Task_IMU"
-#define TASK_IMU_PERIOD_MS  10
+#define TASK_IMU_PERIOD_MS  2
 
 /* Очереди длины 1 ("последнее значение"): задача пишет через xQueueOverwrite,
  * потребители (Task_Filter) читают через xQueuePeek — значение остаётся

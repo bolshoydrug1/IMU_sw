@@ -76,11 +76,12 @@ bool LSM6DS3TR_Init(LSM6DS3TR_Handle_t *dev, SPI_HandleTypeDef *hspi,
     /* CTRL3_C: BDU=1 (не отдавать половину обновлённого сэмпла), IF_INC уже 1 по умолчанию. */
     if (!LSM6DS3TR_WriteRegVerified(dev, LSM6DS3TR_REG_CTRL3_C, 0x44)) return false;
 
-    /* CTRL1_XL: ODR_XL=0100 (104 Гц, Normal mode), FS_XL=00 (+-2g) -> сенситивность выше не меняется */
-    if (!LSM6DS3TR_WriteRegVerified(dev, LSM6DS3TR_REG_CTRL1_XL, 0x40)) return false;
+    /* CTRL1_XL: ODR_XL=0111 (833 Гц) — с запасом выше 500Гц опроса Task_IMU,
+     * FS_XL=00 (+-2g) -> сенситивность выше не меняется */
+    if (!LSM6DS3TR_WriteRegVerified(dev, LSM6DS3TR_REG_CTRL1_XL, 0x70)) return false;
 
-    /* CTRL2_G: ODR_G=0100 (104 Гц), FS_G=00 (+-245dps) */
-    if (!LSM6DS3TR_WriteRegVerified(dev, LSM6DS3TR_REG_CTRL2_G, 0x40)) return false;
+    /* CTRL2_G: ODR_G=0111 (833 Гц), FS_G=00 (+-245dps) */
+    if (!LSM6DS3TR_WriteRegVerified(dev, LSM6DS3TR_REG_CTRL2_G, 0x70)) return false;
 
     /* INT1_CTRL: INT1_DRDY_XL=1, INT1_DRDY_G=1 — не влияет на текущий поллинг,
      * но пусть остаётся консистентно настроенным на случай возврата к EXTI. */

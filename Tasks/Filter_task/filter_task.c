@@ -9,7 +9,7 @@ static TaskHandle_t xTask_FilterHandle = NULL;
 
 QueueHandle_t xQueue_FusionOutput;
 
-#define SAMPLE_STALE_MS         50     /* старше — считаем датчик "молчащим" в этом цикле */
+#define SAMPLE_STALE_MS         10     /* старше — считаем датчик "молчащим" в этом цикле */
 #define MADGWICK_BETA           0.1f   /* коэффициент коррекции по акселерометру */
 #define AGREEMENT_COS_THRESHOLD 0.999f /* ~2.6 градуса между кватернионами — подобрать по факту */
 
@@ -25,6 +25,10 @@ static float s_q[SENSOR_COUNT][4] = {
     {1.0f, 0.0f, 0.0f, 0.0f},
 };
 static uint32_t s_lastUpdateMs[SENSOR_COUNT];
+/* Последние сырые accel/gyro каждого датчика — нужны для усреднения в
+ * FusionOutput_t наравне с кватернионом, а не только для шага фильтра. */
+static float s_lastGyro[SENSOR_COUNT][3];
+static float s_lastAccel[SENSOR_COUNT][3];
 
 /* Классический градиентно-спусковый фильтр Madgwick (IMU-вариант, без магнитометра).
  * Общественное достояние, алгоритм S. Madgwick, x-io Technologies. */
@@ -120,6 +124,8 @@ static void vTask_Filter_BodyFunction(void *pvParameters)
                                sample.gyro_dps[1] * (float)M_PI / 180.0f,
                                sample.gyro_dps[2] * (float)M_PI / 180.0f,
                                sample.accel_g[0], sample.accel_g[1], sample.accel_g[2], dt);
+            memcpy(s_lastGyro[IDX_BMI], sample.gyro_dps, sizeof(s_lastGyro[IDX_BMI]));
+            memcpy(s_lastAccel[IDX_BMI], sample.accel_g, sizeof(s_lastAccel[IDX_BMI]));
             fresh[IDX_BMI] = true;
         }
 
@@ -132,6 +138,8 @@ static void vTask_Filter_BodyFunction(void *pvParameters)
                                sample.gyro_dps[1] * (float)M_PI / 180.0f,
                                sample.gyro_dps[2] * (float)M_PI / 180.0f,
                                sample.accel_g[0], sample.accel_g[1], sample.accel_g[2], dt);
+            memcpy(s_lastGyro[IDX_LSM], sample.gyro_dps, sizeof(s_lastGyro[IDX_LSM]));
+            memcpy(s_lastAccel[IDX_LSM], sample.accel_g, sizeof(s_lastAccel[IDX_LSM]));
             fresh[IDX_LSM] = true;
         }
 
@@ -144,6 +152,8 @@ static void vTask_Filter_BodyFunction(void *pvParameters)
                                sample.gyro_dps[1] * (float)M_PI / 180.0f,
                                sample.gyro_dps[2] * (float)M_PI / 180.0f,
                                sample.accel_g[0], sample.accel_g[1], sample.accel_g[2], dt);
+            memcpy(s_lastGyro[IDX_MPU], sample.gyro_dps, sizeof(s_lastGyro[IDX_MPU]));
+            memcpy(s_lastAccel[IDX_MPU], sample.accel_g, sizeof(s_lastAccel[IDX_MPU]));
             fresh[IDX_MPU] = true;
         }
 
@@ -171,8 +181,11 @@ static void vTask_Filter_BodyFunction(void *pvParameters)
             else if (agree01 && !agree02 && !agree12) faultMask = (1 << IDX_MPU);
         }
 
-        /* Итоговая ориентация — нормированное среднее по датчикам, не отбракованным голосованием. */
+        /* Итоговая ориентация и сырые accel/gyro — усреднение по датчикам,
+         * не отбракованным голосованием (тем же набором, что вошёл в q). */
         float qsum[4] = { 0, 0, 0, 0 };
+        float gyroSum[3] = { 0, 0, 0 };
+        float accelSum[3] = { 0, 0, 0 };
         int used = 0;
         for (int i = 0; i < SENSOR_COUNT; i++) {
             if (!fresh[i]) continue;
@@ -186,6 +199,12 @@ static void vTask_Filter_BodyFunction(void *pvParameters)
             qsum[1] += sign * s_q[i][1];
             qsum[2] += sign * s_q[i][2];
             qsum[3] += sign * s_q[i][3];
+            gyroSum[0] += s_lastGyro[i][0];
+            gyroSum[1] += s_lastGyro[i][1];
+            gyroSum[2] += s_lastGyro[i][2];
+            accelSum[0] += s_lastAccel[i][0];
+            accelSum[1] += s_lastAccel[i][1];
+            accelSum[2] += s_lastAccel[i][2];
             used++;
         }
 
@@ -203,6 +222,12 @@ static void vTask_Filter_BodyFunction(void *pvParameters)
                 result.q[3] = qsum[3] / norm;
                 QuaternionToEuler(result.q, &result.roll_deg, &result.pitch_deg, &result.yaw_deg);
             }
+            result.gyro_dps[0] = gyroSum[0] / (float)used;
+            result.gyro_dps[1] = gyroSum[1] / (float)used;
+            result.gyro_dps[2] = gyroSum[2] / (float)used;
+            result.accel_g[0] = accelSum[0] / (float)used;
+            result.accel_g[1] = accelSum[1] / (float)used;
+            result.accel_g[2] = accelSum[2] / (float)used;
         }
 
         xQueueOverwrite(xQueue_FusionOutput, &result);

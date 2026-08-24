@@ -64,8 +64,8 @@ bool MPU6500_Init(MPU6500_Handle_t *dev, SPI_HandleTypeDef *hspi,
      * выключен и внутренняя частота гироскопа 8кГц, что заливает EXTI/шину. */
     if (!MPU6500_WriteReg(dev, MPU6500_REG_CONFIG, 0x03)) return false;
 
-    /* SMPLRT_DIV=9 -> ODR = 1кГц/(1+9) = 100 Гц (действует, когда DLPF включён). */
-    if (!MPU6500_WriteReg(dev, MPU6500_REG_SMPLRT_DIV, 0x09)) return false;
+    /* SMPLRT_DIV=0 -> ODR = 1кГц/(1+0) = 1000 Гц — с запасом выше 500Гц опроса. */
+    if (!MPU6500_WriteReg(dev, MPU6500_REG_SMPLRT_DIV, 0x00)) return false;
 
     /* INT_ENABLE: DATA_RDY_EN=1 — без этого MPU_INT никогда не переключится,
      * даже когда данные реально обновляются на заданном ODR. */

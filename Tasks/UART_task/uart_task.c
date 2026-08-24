@@ -1,16 +1,32 @@
 #include "uart_task.h"
 #include "filter_task.h"
 #include "main.h"
-#include <stdio.h>
 
 static TaskHandle_t xTask_UARTHandle = NULL;
 
 extern UART_HandleTypeDef huart1;
 
+/* HAL_GetTick() — 32-битный счётчик мс, переполняется через ~49.7 суток.
+ * Для метки времени пакета (uint64_t) расширяем его, отслеживая переполнения —
+ * работает надёжно, пока функция вызывается чаще периода переполнения
+ * (у нас — каждые 2мс, с огромным запасом). */
+static uint64_t GetTick64Ms(void)
+{
+    static uint32_t s_lastTick = 0;
+    static uint32_t s_wrapCount = 0;
+
+    uint32_t tick = HAL_GetTick();
+    if (tick < s_lastTick) {
+        s_wrapCount++;
+    }
+    s_lastTick = tick;
+
+    return ((uint64_t)s_wrapCount << 32) | (uint64_t)tick;
+}
+
 static void vTask_UART_BodyFunction(void *pvParameters)
 {
     (void)pvParameters;
-    char line[128];
 
     TickType_t xLastWakeTime = xTaskGetTickCount();
     const TickType_t xFrequency = pdMS_TO_TICKS(TASK_UART_PERIOD_MS);
@@ -21,17 +37,27 @@ static void vTask_UART_BodyFunction(void *pvParameters)
         FusionOutput_t out;
         if (xQueuePeek(xQueue_FusionOutput, &out, 0) != pdTRUE) continue;
 
-        int len = snprintf(line, sizeof(line),
-                            "t=%lu roll=%.2f pitch=%.2f yaw=%.2f fault=0x%02X\r\n",
-                            (unsigned long)out.timestamp_ms,
-                            out.roll_deg, out.pitch_deg, out.yaw_deg,
-                            out.fault_mask);
+        IMU_Packet_t packet;
+        packet.head = IMU_PACKET_HEAD;
+        packet.type = IMU_PACKET_TYPE;
+        packet.version = IMU_PROTOCOL_VER;
+        packet.timestamp_ms = GetTick64Ms();
+        packet.gyro_x_dps = out.gyro_dps[0];
+        packet.gyro_y_dps = out.gyro_dps[1];
+        packet.gyro_z_dps = out.gyro_dps[2];
+        packet.accel_x_g = out.accel_g[0];
+        packet.accel_y_g = out.accel_g[1];
+        packet.accel_z_g = out.accel_g[2];
+        packet.roll_deg = out.roll_deg;
+        packet.pitch_deg = out.pitch_deg;
+        packet.yaw_deg = out.yaw_deg;
+        packet.tail = IMU_PACKET_TAIL;
 
-        if (len > 0) {
-            /* TODO: перейти на HAL_UART_Transmit_DMA, чтобы не блокировать
-             * задачу на время передачи ~128 байт при 115200 бод (~11 мс). */
-            HAL_UART_Transmit(&huart1, (uint8_t *)line, (uint16_t)len, 20);
-        }
+        /* TODO: перейти на HAL_UART_Transmit_DMA — при 500Гц и 48 байт/пакет
+         * блокирующая передача занимает заметную долю 2мс-бюджета задачи
+         * (см. расчёт: 48*10 бит / бод). Нужно включить DMA TX для USART1
+         * в CubeMX (Connectivity -> USART1 -> DMA Settings -> Add -> USART1_TX). */
+        HAL_UART_Transmit(&huart1, (uint8_t *)&packet, sizeof(packet), 5);
     }
 }
 

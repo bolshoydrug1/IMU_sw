@@ -75,7 +75,7 @@ void Task_IMU_Start(void)
     int attempts;
 
     attempts = 0;
-    while (!BMI270_Init(&bmi, &hspi2, LSM_CS_GPIO_Port, LSM_CS_Pin) && attempts < SENSOR_INIT_RETRIES) {
+    while (!BMI270_Init(&bmi, &hspi3, BMI270_CS_GPIO_Port, BMI270_CS_Pin) && attempts < SENSOR_INIT_RETRIES) {
         HAL_Delay(10);
         attempts++;
     }
