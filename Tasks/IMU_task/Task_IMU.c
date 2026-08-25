@@ -71,7 +71,11 @@ void Task_IMU_Start(void)
     /* Инициализация датчиков при старте — вызывается до старта планировщика
      * (main.c, USER CODE RTOS_THREADS), поэтому только HAL_Delay, не vTaskDelay.
      * Ограниченное число попыток, чтобы один неисправный/неподключённый датчик
-     * не подвешивал загрузку прошивки навсегда. */
+     * не подвешивал загрузку прошивки навсегда.
+     * DO1 включён на всё время инициализации — удобно смотреть длительность
+     * осциллографом/логическим анализатором. */
+    HAL_GPIO_WritePin(DO1_GPIO_Port, DO1_Pin, GPIO_PIN_SET);
+
     int attempts;
 
     attempts = 0;
@@ -91,6 +95,8 @@ void Task_IMU_Start(void)
         HAL_Delay(10);
         attempts++;
     }
+
+    HAL_GPIO_WritePin(DO1_GPIO_Port, DO1_Pin, GPIO_PIN_RESET);
 
     BaseType_t xReturned = xTaskCreate(
         vTask_IMU_BodyFunction,

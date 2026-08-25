@@ -56,8 +56,11 @@ static void vTask_UART_BodyFunction(void *pvParameters)
         /* TODO: перейти на HAL_UART_Transmit_DMA — при 500Гц и 48 байт/пакет
          * блокирующая передача занимает заметную долю 2мс-бюджета задачи
          * (см. расчёт: 48*10 бит / бод). Нужно включить DMA TX для USART1
-         * в CubeMX (Connectivity -> USART1 -> DMA Settings -> Add -> USART1_TX). */
+         * в CubeMX (Connectivity -> USART1 -> DMA Settings -> Add -> USART1_TX).
+         * DO2 включён на время самой передачи — видно её реальную длительность. */
+        HAL_GPIO_WritePin(DO2_GPIO_Port, DO2_Pin, GPIO_PIN_SET);
         HAL_UART_Transmit(&huart1, (uint8_t *)&packet, sizeof(packet), 5);
+        HAL_GPIO_WritePin(DO2_GPIO_Port, DO2_Pin, GPIO_PIN_RESET);
     }
 }
 
