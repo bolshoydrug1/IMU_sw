@@ -21,6 +21,20 @@ extern SPI_HandleTypeDef hspi3; /* BMI270 */
 
 #define SENSOR_INIT_RETRIES 20
 
+/* Оба рабочих датчика сейчас на FS=+-2g (см. LSM6DS3TR_Init/MPU6500_Init),
+ * поэтому физически осмысленный модуль accel лежит в (0.1g, 2.2g] — нижняя
+ * граница отсекает "мёртвый" датчик, отдающий (0,0,0) (например BMI270 без
+ * загруженного init-конфига — SPI-чтение проходит успешно, но данные не
+ * обновляются), верхняя — с небольшим запасом под потолок диапазона FS.
+ * Без этой проверки "мёртвый" датчик всё равно считается valid (SPI-транзакция
+ * ведь реально прошла) и молча портит усреднение в Task_Filter — делит сумму
+ * на количество датчиков, включая тот, что дал ровно ноль. */
+static bool IsAccelPlausible(const float accel_g[3])
+{
+    float mag2 = accel_g[0] * accel_g[0] + accel_g[1] * accel_g[1] + accel_g[2] * accel_g[2];
+    return (mag2 > 0.01f) && (mag2 < 4.84f); /* |accel| в (0.1g, 2.2g) */
+}
+
 static void vTask_IMU_BodyFunction(void *pvParameters)
 {
     (void)pvParameters;
@@ -35,6 +49,7 @@ static void vTask_IMU_BodyFunction(void *pvParameters)
         sample.valid = BMI270_ReadRaw(&bmi, &bmiRaw);
         if (sample.valid) {
             BMI270_ConvertToPhysical(&bmi, &bmiRaw, sample.accel_g, sample.gyro_dps);
+            sample.valid = IsAccelPlausible(sample.accel_g);
         }
         sample.timestamp_ms = HAL_GetTick();
         xQueueOverwrite(xQueue_BMI270, &sample);
@@ -43,6 +58,7 @@ static void vTask_IMU_BodyFunction(void *pvParameters)
         sample.valid = LSM6DS3TR_ReadRaw(&lsm, &lsmRaw);
         if (sample.valid) {
             LSM6DS3TR_ConvertToPhysical(&lsm, &lsmRaw, sample.accel_g, sample.gyro_dps);
+            sample.valid = IsAccelPlausible(sample.accel_g);
         }
         sample.timestamp_ms = HAL_GetTick();
         xQueueOverwrite(xQueue_LSM6DS3TR, &sample);
@@ -51,6 +67,7 @@ static void vTask_IMU_BodyFunction(void *pvParameters)
         sample.valid = MPU6500_ReadRaw(&mpu, &mpuRaw);
         if (sample.valid) {
             MPU6500_ConvertToPhysical(&mpu, &mpuRaw, sample.accel_g, sample.gyro_dps);
+            sample.valid = IsAccelPlausible(sample.accel_g);
         }
         sample.timestamp_ms = HAL_GetTick();
         xQueueOverwrite(xQueue_MPU6500, &sample);
@@ -76,6 +93,7 @@ void Task_IMU_Start(void)
      * осциллографом/логическим анализатором. */
     HAL_GPIO_WritePin(DO1_GPIO_Port, DO1_Pin, GPIO_PIN_SET);
 
+    HAL_Delay(100);
     int attempts;
 
     attempts = 0;

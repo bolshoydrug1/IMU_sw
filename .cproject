@@ -67,6 +67,8 @@
 									<listOptionValue builtIn="false" value="../Tasks/IMU_task"/>
 									<listOptionValue builtIn="false" value="../Tasks/Filter_task"/>
 									<listOptionValue builtIn="false" value="../Tasks/UART_task"/>
+									<listOptionValue builtIn="false" value="../Protocol"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/Protocol}&quot;"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.661046736" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -93,6 +95,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Protocol"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="My_drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
@@ -165,6 +168,7 @@
 									<listOptionValue builtIn="false" value="../Tasks/IMU_task"/>
 									<listOptionValue builtIn="false" value="../Tasks/Filter_task"/>
 									<listOptionValue builtIn="false" value="../Tasks/UART_task"/>
+									<listOptionValue builtIn="false" value="../Protocol"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1630810502" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
@@ -191,6 +195,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Protocol"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Core"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="My_drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
