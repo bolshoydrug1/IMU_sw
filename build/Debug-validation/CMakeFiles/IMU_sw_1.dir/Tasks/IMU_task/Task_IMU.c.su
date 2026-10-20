@@ -1,5 +1,5 @@
 D:/Education/IMU_v1/IMU_sw/Tasks/IMU_task/Task_IMU.c:38:13:IsAccelPlausible	24	static
-D:/Education/IMU_v1/IMU_sw/Tasks/IMU_task/Task_IMU.c:44:13:vTask_IMU_BodyFunction	112	static
-D:/Education/IMU_v1/IMU_sw/Tasks/IMU_task/Task_IMU.c:129:6:Task_IMU_Start	24	static
-D:/Education/IMU_v1/IMU_sw/Tasks/IMU_task/Task_IMU.c:154:6:Task_IMU_Stop	8	static
-D:/Education/IMU_v1/IMU_sw/Tasks/IMU_task/Task_IMU.c:162:6:Task_IMU_IsRunning	8	static
+D:/Education/IMU_v1/IMU_sw/Tasks/IMU_task/Task_IMU.c:44:13:vTask_IMU_BodyFunction	120	static
+D:/Education/IMU_v1/IMU_sw/Tasks/IMU_task/Task_IMU.c:133:6:Task_IMU_Start	24	static
+D:/Education/IMU_v1/IMU_sw/Tasks/IMU_task/Task_IMU.c:158:6:Task_IMU_Stop	8	static
+D:/Education/IMU_v1/IMU_sw/Tasks/IMU_task/Task_IMU.c:166:6:Task_IMU_IsRunning	8	static

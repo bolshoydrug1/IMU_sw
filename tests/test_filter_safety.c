@@ -31,8 +31,11 @@ int main(void)
     sample.valid = true;
     sample.accel_g[2] = 1;
     sample.gyro_dps[2] = 90;
+    sample.temperature_c = 27;
+    sample.temperature_valid = true;
     sample.timestamp_ms = 100;
     assert(UpdateSensor(0, &sample, 100, 0));
+    assert(s_temperatureValid[0] && s_lastTemperature[0] == 27);
     float saved[4];
     memcpy(saved, s_q[0], sizeof(saved));
     assert(UpdateSensor(0, &sample, 102, 0));
@@ -61,6 +64,30 @@ int main(void)
     sample.timestamp_ms = 0;
     assert(UpdateSensor(2, &sample, 0, 0)); /* tick wrap */
     assert(s_lastUpdateMs[2] == 0);
+
+    float temperature;
+    assert(!UpdateTemperature(0, &temperature) && temperature == 0);
+    s_temperatureValid[1] = s_temperatureValid[2] = true;
+    s_lastTemperature[1] = 20;
+    s_lastTemperature[2] = 30;
+    s_lastUpdateMs[1] = s_lastUpdateMs[2] = 10;
+    assert(UpdateTemperature(6, &temperature) && temperature == 25);
+    s_lastTemperature[1] = 30;
+    s_lastUpdateMs[1] = 12;
+    assert(UpdateTemperature(6, &temperature));
+    assert(fabsf(temperature - 25.75f) < 1e-5f);
+    assert(UpdateTemperature(6, &temperature));
+    assert(fabsf(temperature - 25.75f) < 1e-5f); /* duplicate: no second IIR step */
+    s_lastTemperature[1] = 10;
+    s_lastUpdateMs[1] = 14;
+    assert(UpdateTemperature(2, &temperature)); /* missing MPU: divide by 1 */
+    assert(fabsf(temperature - 23.3875f) < 1e-5f);
+    s_lastTemperature[1] = NAN;
+    assert(!UpdateTemperature(2, &temperature));
+    s_lastTemperature[1] = 32;
+    assert(UpdateTemperature(2, &temperature) && temperature == 32); /* reset after loss */
+    s_temperatureValid[1] = false;
+    assert(!UpdateTemperature(2, &temperature));
     puts("Filter safety: all assertions passed");
     return 0;
 }

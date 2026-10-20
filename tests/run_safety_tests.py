@@ -26,10 +26,12 @@ static int xQueuePeek(QueueHandle_t q, IMU_Sample_t *out, int timeout)
 { (void)timeout; *out = *q; return pdTRUE; }
 '''
 test = (root / 'tests/test_filter_safety.c').read_text(encoding='utf-8')
-(out / 'filter_test.c').write_text(prelude + helpers + test, encoding='utf-8')
+filter_header = (root / 'Tasks/Filter_task/filter_task.h').read_text(encoding='utf-8')
+temperature_macro = next(line for line in filter_header.splitlines()
+                         if line.startswith('#define TASK_FILTER_TEMPERATURE_IIR_ALPHA'))
+(out / 'filter_test.c').write_text(prelude + temperature_macro + '\n' + helpers + test, encoding='utf-8')
 uart_source = (root / 'Tasks/UART_task/uart_task.c').read_text(encoding='utf-8')
 prepare = uart_source[uart_source.index('static void PrepareTelemetry'):uart_source.index('static void vTask_UART_BodyFunction')]
-filter_header = (root / 'Tasks/Filter_task/filter_task.h').read_text(encoding='utf-8')
 fusion_type = filter_header[filter_header.index('typedef struct {'):filter_header.index('} FusionOutput_t;') + len('} FusionOutput_t;')]
 (out / 'telemetry_test.c').write_text(
     '#include <math.h>\n#include <string.h>\n#include "Protocol_IMU.h"\n'

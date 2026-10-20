@@ -5,8 +5,7 @@
 #define LSM6DS3TR_REG_CTRL1_XL   0x10
 #define LSM6DS3TR_REG_CTRL2_G    0x11
 #define LSM6DS3TR_REG_CTRL3_C    0x12
-#define LSM6DS3TR_REG_OUTX_L_G   0x22 /* блок гироскопа: 6 байт, X/Y/Z */
-#define LSM6DS3TR_REG_OUTX_L_XL  0x28 /* блок акселерометра: 6 байт, X/Y/Z */
+#define LSM6DS3TR_REG_OUT_TEMP_L 0x20 /* temp(2), gyro(6), accel(6) */
 
 #define LSM6DS3TR_SPI_READ_BIT  0x80
 
@@ -93,15 +92,11 @@ bool LSM6DS3TR_Init(LSM6DS3TR_Handle_t *dev, SPI_HandleTypeDef *hspi,
 
 bool LSM6DS3TR_ReadRaw(LSM6DS3TR_Handle_t *dev, LSM6DS3TR_RawData_t *out)
 {
-    uint8_t gyro_buf[6];
-    uint8_t accel_buf[6];
-
-    if (!LSM6DS3TR_ReadRegs(dev, LSM6DS3TR_REG_OUTX_L_G, gyro_buf, 6)) {
-        return false;
-    }
-    if (!LSM6DS3TR_ReadRegs(dev, LSM6DS3TR_REG_OUTX_L_XL, accel_buf, 6)) {
-        return false;
-    }
+    uint8_t buf[14];
+    if (!LSM6DS3TR_ReadRegs(dev, LSM6DS3TR_REG_OUT_TEMP_L, buf, sizeof(buf))) return false;
+    const uint8_t *gyro_buf = &buf[2];
+    const uint8_t *accel_buf = &buf[8];
+    out->temp_raw = (int16_t)((buf[1] << 8) | buf[0]);
 
     out->gyro_raw[0]  = (int16_t)((gyro_buf[1] << 8) | gyro_buf[0]);
     out->gyro_raw[1]  = (int16_t)((gyro_buf[3] << 8) | gyro_buf[2]);
@@ -122,6 +117,11 @@ bool LSM6DS3TR_DataReady(LSM6DS3TR_Handle_t *dev, bool *ready)
     if (!LSM6DS3TR_ReadRegs(dev, 0x1E, &status, 1)) return false;
     *ready = (status & 0x03) == 0x03; /* XLDA and GDA */
     return true;
+}
+
+float LSM6DS3TR_TemperatureC(int16_t raw)
+{
+    return 25.0f + (float)raw / 256.0f;
 }
 
 void LSM6DS3TR_ConvertToPhysical(const LSM6DS3TR_Handle_t *dev,

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 static uint8_t regs[128], address;
 static bool io_error;
@@ -62,6 +63,23 @@ int main(void)
     regs[ID_REG] = ID;
 #if defined(TEST_LSM) || defined(TEST_MPU)
     assert(INIT(&dev, &spi, &gpio, 1));
+#if defined(TEST_LSM)
+    /* One LE burst: temperature + gyro + accel. */
+    regs[0x20] = 0; regs[0x21] = 1; /* +256 -> 26 C */
+    regs[0x22] = 0xFE; regs[0x23] = 0xFF;
+    regs[0x28] = 0x34; regs[0x29] = 0x12;
+    LSM6DS3TR_RawData_t raw;
+    assert(LSM6DS3TR_ReadRaw(&dev, &raw));
+    assert(raw.temp_raw == 256 && raw.gyro_raw[0] == -2 && raw.accel_raw[0] == 0x1234);
+    assert(LSM6DS3TR_TemperatureC(raw.temp_raw) == 26);
+    assert(LSM6DS3TR_TemperatureC(-256) == 24);
+#else
+    regs[0x41] = 0xFF; regs[0x42] = 0x9C; /* -100, big endian */
+    MPU6500_RawData_t raw;
+    assert(MPU6500_ReadRaw(&dev, &raw) && raw.temp_raw == -100);
+    assert(MPU6500_TemperatureC(0) == 21);
+    assert(fabsf(MPU6500_TemperatureC(-100) - (21 - 100/333.87f)) < 1e-5f);
+#endif
     bool ready = true;
     regs[STATUS_REG] = 0;
     assert(READY(&dev, &ready) && !ready);

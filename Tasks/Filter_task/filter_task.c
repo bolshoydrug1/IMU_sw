@@ -58,6 +58,52 @@ static void SeedQuaternion(float *q, const float *a, float yaw)
  * FusionOutput_t наравне с кватернионом, а не только для шага фильтра. */
 static float s_lastGyro[SENSOR_COUNT][3];
 static float s_lastAccel[SENSOR_COUNT][3];
+static float s_lastTemperature[SENSOR_COUNT];
+static bool s_temperatureValid[SENSOR_COUNT];
+static float s_temperatureFiltered;
+static bool s_temperatureInitialized;
+static uint8_t s_temperatureMask;
+static uint32_t s_temperatureProcessedMs[SENSOR_COUNT];
+
+static bool UpdateTemperature(uint8_t usedMask, float *out)
+{
+    const float alpha = TASK_FILTER_TEMPERATURE_IIR_ALPHA;
+    if (!isfinite(alpha) || alpha <= 0 || alpha > 1) {
+        s_temperatureInitialized = false;
+        *out = 0;
+        return false;
+    }
+    float sum = 0;
+    unsigned count = 0;
+    uint8_t mask = 0;
+    bool changed = false;
+    for (int i = 0; i < SENSOR_COUNT; ++i) {
+        if (!(usedMask & (1u << i)) || !s_temperatureValid[i] ||
+            !isfinite(s_lastTemperature[i])) continue;
+        mask |= (uint8_t)(1u << i);
+        sum += s_lastTemperature[i];
+        ++count;
+        if (s_temperatureProcessedMs[i] != s_lastUpdateMs[i]) changed = true;
+    }
+    if (count == 0) {
+        s_temperatureInitialized = false;
+        s_temperatureMask = 0;
+        *out = 0;
+        return false;
+    }
+    float mean = sum / (float)count;
+    if (!s_temperatureInitialized || !isfinite(s_temperatureFiltered)) {
+        s_temperatureFiltered = mean; /* No artificial ramp from zero at startup. */
+        s_temperatureInitialized = true;
+    } else if (changed || mask != s_temperatureMask) {
+        s_temperatureFiltered += alpha * (mean - s_temperatureFiltered);
+    }
+    s_temperatureMask = mask;
+    for (int i = 0; i < SENSOR_COUNT; ++i)
+        if (mask & (1u << i)) s_temperatureProcessedMs[i] = s_lastUpdateMs[i];
+    *out = s_temperatureFiltered;
+    return isfinite(*out);
+}
 
 /* Классический градиентно-спусковый фильтр Madgwick (IMU-вариант, без магнитометра).
  * Общественное достояние, алгоритм S. Madgwick, x-io Technologies. */
@@ -175,6 +221,8 @@ static bool UpdateSensor(int index, QueueHandle_t queue, uint32_t now, float yaw
     s_hasSample[index] = true;
     memcpy(s_lastGyro[index], sample.gyro_dps, sizeof(s_lastGyro[index]));
     memcpy(s_lastAccel[index], sample.accel_g, sizeof(s_lastAccel[index]));
+    s_lastTemperature[index] = sample.temperature_c;
+    s_temperatureValid[index] = sample.temperature_valid && isfinite(sample.temperature_c);
     return true;
 }
 
@@ -184,6 +232,7 @@ static void vTask_Filter_BodyFunction(void *pvParameters)
 
     uint32_t now = HAL_GetTick();
     memset(s_hasSample, 0, sizeof(s_hasSample));
+    s_temperatureInitialized = false;
     float lastYaw = 0;
 
     TickType_t xLastWakeTime = xTaskGetTickCount();
@@ -276,6 +325,8 @@ static void vTask_Filter_BodyFunction(void *pvParameters)
             result.accel_g[2] = accelSum[2] / (float)used;
         }
 
+        bool temperatureOk = UpdateTemperature(result.used_mask, &result.temperature_c);
+        result.valid = result.valid && temperatureOk;
         xQueueOverwrite(xQueue_FusionOutput, &result);
     }
 }

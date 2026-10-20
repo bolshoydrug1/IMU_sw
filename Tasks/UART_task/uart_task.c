@@ -51,7 +51,7 @@ static void PrepareTelemetry(const FusionOutput_t *out, uint64_t now,
     for (int i = 0; i < 3; ++i)
         if (!isfinite(out->gyro_dps[i]) || !isfinite(out->accel_g[i])) return;
     if (!isfinite(out->roll_deg) || !isfinite(out->pitch_deg) ||
-        !isfinite(out->yaw_deg)) return;
+        !isfinite(out->yaw_deg) || !isfinite(out->temperature_c)) return;
     telemetry->gyro_x_dps = out->gyro_dps[0];
     telemetry->gyro_y_dps = out->gyro_dps[1];
     telemetry->gyro_z_dps = out->gyro_dps[2];
@@ -61,6 +61,7 @@ static void PrepareTelemetry(const FusionOutput_t *out, uint64_t now,
     telemetry->roll_deg = out->roll_deg;
     telemetry->pitch_deg = out->pitch_deg;
     telemetry->yaw_deg = out->yaw_deg;
+    telemetry->temperature_c = out->temperature_c;
     telemetry->status = PROTOCOL_TELEMETRY_STATUS_OK;
 }
 
@@ -87,7 +88,7 @@ static void vTask_UART_BodyFunction(void *pvParameters)
             continue;
         }
 
-        /* TODO: перейти на HAL_UART_Transmit_DMA — при 500Гц и 53 байта/пакет
+        /* TODO: перейти на HAL_UART_Transmit_DMA — при 500Гц и 57 байт/пакет
          * блокирующая передача занимает заметную долю 2мс-бюджета задачи.
          * Нужно включить DMA TX для USART1 в CubeMX (Connectivity -> USART1
          * -> DMA Settings -> Add -> USART1_TX).

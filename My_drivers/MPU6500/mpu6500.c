@@ -113,6 +113,11 @@ bool MPU6500_DataReady(MPU6500_Handle_t *dev, bool *ready)
     return true;
 }
 
+float MPU6500_TemperatureC(int16_t raw)
+{
+    return 21.0f + (float)raw / 333.87f;
+}
+
 void MPU6500_ConvertToPhysical(const MPU6500_Handle_t *dev,
                                 const MPU6500_RawData_t *raw,
                                 float accel_g[3], float gyro_dps[3])

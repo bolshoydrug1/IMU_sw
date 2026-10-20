@@ -16,6 +16,7 @@ typedef struct {
 typedef struct {
     int16_t accel_raw[3];
     int16_t gyro_raw[3];
+    int16_t temp_raw;
 } LSM6DS3TR_RawData_t;
 
 /* Targets LSM6DS3TR-C (WHO_AM_I=0x6A). */
@@ -24,6 +25,7 @@ bool LSM6DS3TR_Init(LSM6DS3TR_Handle_t *dev, SPI_HandleTypeDef *hspi,
 
 bool LSM6DS3TR_ReadRaw(LSM6DS3TR_Handle_t *dev, LSM6DS3TR_RawData_t *out);
 bool LSM6DS3TR_DataReady(LSM6DS3TR_Handle_t *dev, bool *ready);
+float LSM6DS3TR_TemperatureC(int16_t raw);
 
 void LSM6DS3TR_ConvertToPhysical(const LSM6DS3TR_Handle_t *dev,
                                   const LSM6DS3TR_RawData_t *raw,

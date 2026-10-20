@@ -11,6 +11,8 @@
 #define TASK_FILTER_PRIORITY   (tskIDLE_PRIORITY + 3)
 #define TASK_FILTER_NAME       "Task_Filter"
 #define TASK_FILTER_PERIOD_MS  2
+/* First-order IIR: y += alpha * (mean - y), 0 < alpha <= 1. */
+#define TASK_FILTER_TEMPERATURE_IIR_ALPHA 0.15f
 
 typedef struct {
     float q[4];             /* w,x,y,z — усреднённая ориентация после голосования */
@@ -19,6 +21,7 @@ typedef struct {
     float yaw_deg;
     float gyro_dps[3];      /* усреднено по тем же датчикам, что вошли в q */
     float accel_g[3];
+    float temperature_c;   /* IIR-filtered mean of available selected sensors. */
     uint8_t fault_mask;     /* бит0=BMI270, бит1=LSM6DS3TR, бит2=MPU6500 — отбракован голосованием */
     uint8_t used_mask;      /* Sensors included in this output, same bit order. */
     bool valid;            /* False when no trustworthy orientation is available. */

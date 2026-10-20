@@ -24,6 +24,7 @@ bool MPU6500_Init(MPU6500_Handle_t *dev, SPI_HandleTypeDef *hspi,
 
 bool MPU6500_ReadRaw(MPU6500_Handle_t *dev, MPU6500_RawData_t *out);
 bool MPU6500_DataReady(MPU6500_Handle_t *dev, bool *ready);
+float MPU6500_TemperatureC(int16_t raw);
 
 void MPU6500_ConvertToPhysical(const MPU6500_Handle_t *dev,
                                 const MPU6500_RawData_t *raw,

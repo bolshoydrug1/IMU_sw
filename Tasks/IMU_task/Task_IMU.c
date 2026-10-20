@@ -75,6 +75,8 @@ static void vTask_IMU_BodyFunction(void *pvParameters)
                 ok = LSM6DS3TR_ReadRaw(&lsm, &raw);
                 if (ok) {
                     LSM6DS3TR_ConvertToPhysical(&lsm, &raw, sample.accel_g, sample.gyro_dps);
+                    sample.temperature_c = LSM6DS3TR_TemperatureC(raw.temp_raw);
+                    sample.temperature_valid = isfinite(sample.temperature_c);
                     sample.valid = IsAccelPlausible(sample.accel_g);
                     for (int i = 0; i < 3; ++i)
                         sample.valid = sample.valid && isfinite(sample.gyro_dps[i]);
@@ -106,6 +108,8 @@ static void vTask_IMU_BodyFunction(void *pvParameters)
                 ok = MPU6500_ReadRaw(&mpu, &raw);
                 if (ok) {
                     MPU6500_ConvertToPhysical(&mpu, &raw, sample.accel_g, sample.gyro_dps);
+                    sample.temperature_c = MPU6500_TemperatureC(raw.temp_raw);
+                    sample.temperature_valid = isfinite(sample.temperature_c);
                     sample.valid = IsAccelPlausible(sample.accel_g);
                     for (int i = 0; i < 3; ++i)
                         sample.valid = sample.valid && isfinite(sample.gyro_dps[i]);

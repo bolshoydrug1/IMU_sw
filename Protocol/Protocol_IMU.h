@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define PROTOCOL_VERSION   0x02 /* Telemetry v2 appends one status byte. */
+#define PROTOCOL_VERSION   0x03 /* Telemetry v3 adds filtered temperature in Celsius. */
 #define PROTOCOL_HEAD      0xAA
 #define PROTOCOL_TAIL      0x55
 
@@ -85,9 +85,10 @@ typedef struct {
                               * (без магнитометра — это интегрированный курс от
                               * гироскопа, подвержен дрейфу, не абсолютный азимут) */
 
+    float temperature_c;   /* Filtered mean of usable sensor temperatures, Celsius. */
     uint8_t status;         /* Protocol_TelemetryStatus_t encoded as one byte.
-                            * On error all nine float fields are zero. */
-} Protocol_TelemetryData_t; /* v2: 45 bytes, status at payload offset 44. */
+                            * On error all ten float fields are zero. */
+} Protocol_TelemetryData_t; /* v3: 49 bytes, status at payload offset 48. */
 
 /* 0x02 */
 typedef struct {
