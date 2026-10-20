@@ -1,0 +1,121 @@
+{
+    // ── .vscode/launch.json — запуск отладки (F5 / панель Run and Debug) ──
+    // Отладка идёт через расширение Cortex-Debug по SWD. Конфигурации есть
+    // для двух программаторов — выбирайте в списке Run and Debug ту, что
+    // подключена к плате:
+    //   • J-Link  — "Debug (J-Link, SWD)" и "Attach (J-Link ...)";
+    //   • ST-Link — "Debug (ST-Link, SWD)" и "Attach (ST-Link ...)".
+    //
+    // Путь к серверу отладки задан в самих конфигурациях (serverpath):
+    //   • J-Link: версия SEGGER-пакета в пути (JLink_V984) зависит от машины —
+    //     при обновлении J-Link поправьте путь;
+    //   • ST-Link: берётся из STM32CubeCLT через переменную STM32CLT_PATH,
+    //     которую задаёт установщик CLT.
+    "version": "0.2.0",
+    "configurations": [
+        // ── Обычный запуск: собрать Debug, прошить, остановиться на main ──
+        {
+            "name": "Debug (J-Link, SWD)",
+            "type": "cortex-debug",
+            "request": "launch",
+
+            // Какой сервер отладки и какой чип.
+            "servertype": "jlink",
+            "device": "STM32F401RC",
+            "interface": "swd",
+            "serverpath": "C:/Program Files/SEGGER/JLink_V984/JLinkGDBServerCL",
+
+            // Что отлаживаем: Debug-сборка (-O0 -g3, макрос DEBUG).
+            // Макрос DEBUG замораживает сторожевой таймер IWDG на остановках,
+            // иначе плата перезагружалась бы на каждом брейкпоинте.
+            "executable": "${workspaceFolder}/build/Debug/IMU_sw_1.elf",
+
+            // Перед стартом собрать проект (задача из tasks.json).
+            "preLaunchTask": "CMake: Build Debug",
+
+            // Описание регистров периферии для панели Peripherals. Берётся из
+            // STM32CubeCLT; переменная STM32CLT_PATH задаётся установщиком CLT.
+            "svdFile": "${env:STM32CLT_PATH}/STMicroelectronics_CMSIS_SVD/STM32F401.svd",
+
+            // После прошивки и сброса дойти до main() и там остановиться.
+            "runToEntryPoint": "main",
+
+            // Журнал самого сервера отладки в консоль не выводить.
+            "showDevDebugOutput": "none"
+
+            // Просмотр задач FreeRTOS (потоки в стеке вызовов): когда обычная
+            // отладка заработает, добавьте сюда ещё одну строку
+            //     "rtos": "FreeRTOS"
+            // (поставив запятую после предыдущей строки).
+        },
+
+        // ── Подключение к уже работающей плате: без сборки, прошивки и сброса ──
+        // Удобно, чтобы посмотреть состояние прошивки, которая уже крутится.
+        {
+            "name": "Attach (J-Link, без перепрошивки)",
+            "type": "cortex-debug",
+            "request": "attach",
+            "servertype": "jlink",
+            "device": "STM32F401RC",
+            "interface": "swd",
+            "serverpath": "C:/Program Files/SEGGER/JLink_V984/JLinkGDBServerCL",
+            "executable": "${workspaceFolder}/build/Debug/IMU_sw_1.elf",
+            "svdFile": "${env:STM32CLT_PATH}/STMicroelectronics_CMSIS_SVD/STM32F401.svd",
+            "showDevDebugOutput": "none"
+        },
+
+        // ═════════════════════════ ST-Link ═════════════════════════
+        // Те же сценарии, что выше, но через ST-LINK_gdbserver из STM32CubeCLT.
+        // От J-Link-конфигураций отличается только сервер: servertype, serverpath и
+        // stm32cubeprogrammer. Всё остальное (сборка, SVD, остановка на main,
+        // заморозка IWDG макросом DEBUG) от типа программатора не зависит.
+
+        // ── Обычный запуск: собрать Debug, прошить, остановиться на main ──
+        {
+            "name": "Debug (ST-Link, SWD)",
+            "type": "cortex-debug",
+            "request": "launch",
+
+            // Сервер отладки ST-Link; чип и интерфейс те же. Параметр device
+            // для ST-Link сервером не используется, оставлен для единообразия.
+            "servertype": "stlink",
+            "device": "STM32F401RC",
+            "interface": "swd",
+
+            // Сам сервер ST-LINK_gdbserver (из STM32CubeCLT).
+            "serverpath": "${env:STM32CLT_PATH}/STLink-gdb-server/bin/ST-LINK_gdbserver.exe",
+
+            // Папка STM32CubeProgrammer: сервер использует её для прошивки
+            // (передаётся ему как -cp). Без явного пути расширение ищет её само
+            // (в CubeIDE или в Program Files) — здесь версия из CLT, как у сервера.
+            "stm32cubeprogrammer": "${env:STM32CLT_PATH}/STM32CubeProgrammer/bin",
+
+            "executable": "${workspaceFolder}/build/Debug/IMU_sw_1.elf",
+            "preLaunchTask": "CMake: Build Debug",
+            "svdFile": "${env:STM32CLT_PATH}/STMicroelectronics_CMSIS_SVD/STM32F401.svd",
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "none"
+
+            // Если к компьютеру подключено несколько ST-Link, добавьте сюда ещё
+            // одну строку с серийным номером нужного (через запятую после
+            // предыдущей строки):
+            //     "serialNumber": "..."
+        },
+
+        // ── Подключение к уже работающей плате: без сборки, прошивки и сброса ──
+        // Расширение само добавляет серверу ключ --attach.
+        {
+            "name": "Attach (ST-Link, без перепрошивки)",
+            "type": "cortex-debug",
+            "request": "attach",
+            "servertype": "stlink",
+            "device": "STM32F401RC",
+            "interface": "swd",
+            "serverpath": "${env:STM32CLT_PATH}/STLink-gdb-server/bin/ST-LINK_gdbserver.exe",
+            "stm32cubeprogrammer": "${env:STM32CLT_PATH}/STM32CubeProgrammer/bin",
+            "executable": "${workspaceFolder}/build/Debug/IMU_sw_1.elf",
+            "svdFile": "${env:STM32CLT_PATH}/STMicroelectronics_CMSIS_SVD/STM32F401.svd",
+            "showDevDebugOutput": "none"
+        }
+    ]
+}

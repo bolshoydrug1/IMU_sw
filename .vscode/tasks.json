@@ -1,0 +1,63 @@
+{
+    // ── .vscode/tasks.json — задачи сборки (запуск: Ctrl+Shift+B или
+    //    Terminal -> Run Task...) ──
+    // Те же команды можно выполнять в терминале из корня проекта.
+    // Здесь только сборка. Прошивка выполняется при старте отладки
+    // (см. launch.json), отдельной задачи прошивки пока нет.
+    "version": "2.0.0",
+    "options": {
+        "cwd": "${workspaceFolder}"
+    },
+    "tasks": [
+        // ── Настройка (cmake --preset): создаёт каталог сборки и compile_commands.json ──
+        // Выполняется за доли секунды, если проект уже настроен; нужна как первый
+        // шаг сборки, чтобы свежий клон собирался с одного нажатия.
+        {
+            "label": "CMake: Configure Debug",
+            "type": "shell",
+            "command": "cmake --preset Debug",
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake: Configure Release",
+            "type": "shell",
+            "command": "cmake --preset Release",
+            "problemMatcher": []
+        },
+
+        // ── Сборка Debug: -O0 -g3, макрос DEBUG; build/Debug/IMU_sw_1.elf ──
+        // Это задача сборки по умолчанию (Ctrl+Shift+B) и задача, которую
+        // запускает отладка перед стартом.
+        {
+            "label": "CMake: Build Debug",
+            "type": "shell",
+            "command": "cmake --build --preset Debug",
+            "dependsOn": ["CMake: Configure Debug"],
+            "group": { "kind": "build", "isDefault": true },
+            // Ошибки и предупреждения компилятора попадают в панель Problems.
+            "problemMatcher": ["$gcc"]
+        },
+
+        // ── Сборка Release: -Os, без отладочной информации и макроса DEBUG ──
+        {
+            "label": "CMake: Build Release",
+            "type": "shell",
+            "command": "cmake --build --preset Release",
+            "dependsOn": ["CMake: Configure Release"],
+            "group": "build",
+            "problemMatcher": ["$gcc"]
+        },
+
+        // ── Чистая пересборка Debug: удаляет объектные файлы и собирает заново ──
+        // Нужна, например, после смены компилятора или заголовков, от которых
+        // зависит много файлов.
+        {
+            "label": "CMake: Clean Rebuild Debug",
+            "type": "shell",
+            "command": "cmake --build --preset Debug --clean-first",
+            "dependsOn": ["CMake: Configure Debug"],
+            "group": "build",
+            "problemMatcher": ["$gcc"]
+        }
+    ]
+}
