@@ -72,6 +72,7 @@ bool LSM6DS3TR_Init(LSM6DS3TR_Handle_t *dev, SPI_HandleTypeDef *hspi,
     if (!LSM6DS3TR_ReadRegs(dev, LSM6DS3TR_REG_WHO_AM_I, &who_am_i, 1)) {
         return false;
     }
+    if (who_am_i != 0x6A) return false;
 
     /* CTRL3_C: BDU=1 (не отдавать половину обновлённого сэмпла), IF_INC уже 1 по умолчанию. */
     if (!LSM6DS3TR_WriteRegVerified(dev, LSM6DS3TR_REG_CTRL3_C, 0x44)) return false;
@@ -109,6 +110,17 @@ bool LSM6DS3TR_ReadRaw(LSM6DS3TR_Handle_t *dev, LSM6DS3TR_RawData_t *out)
     out->accel_raw[1] = (int16_t)((accel_buf[3] << 8) | accel_buf[2]);
     out->accel_raw[2] = (int16_t)((accel_buf[5] << 8) | accel_buf[4]);
 
+    return true;
+}
+
+bool LSM6DS3TR_DataReady(LSM6DS3TR_Handle_t *dev, bool *ready)
+{
+    uint8_t id = 0, status = 0;
+    *ready = false;
+    if (!LSM6DS3TR_ReadRegs(dev, LSM6DS3TR_REG_WHO_AM_I, &id, 1) || id != 0x6A)
+        return false;
+    if (!LSM6DS3TR_ReadRegs(dev, 0x1E, &status, 1)) return false;
+    *ready = (status & 0x03) == 0x03; /* XLDA and GDA */
     return true;
 }
 

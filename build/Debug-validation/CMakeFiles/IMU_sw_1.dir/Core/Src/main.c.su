@@ -1,0 +1,4 @@
+D:/Education/IMU_v1/IMU_sw/Core/Src/main.c:71:5:main	8	static
+D:/Education/IMU_v1/IMU_sw/Core/Src/main.c:130:6:SystemClock_Config	88	static
+D:/Education/IMU_v1/IMU_sw/Core/Src/main.c:182:6:HAL_TIM_PeriodElapsedCallback	16	static
+D:/Education/IMU_v1/IMU_sw/Core/Src/main.c:200:6:Error_Handler	4	static

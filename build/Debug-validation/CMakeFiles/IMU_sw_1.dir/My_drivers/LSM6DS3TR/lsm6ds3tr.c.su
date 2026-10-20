@@ -1,0 +1,9 @@
+D:/Education/IMU_v1/IMU_sw/My_drivers/LSM6DS3TR/lsm6ds3tr.c:13:13:CS_Low	16	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/LSM6DS3TR/lsm6ds3tr.c:14:13:CS_High	16	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/LSM6DS3TR/lsm6ds3tr.c:18:13:LSM6DS3TR_ReadRegs	32	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/LSM6DS3TR/lsm6ds3tr.c:31:13:LSM6DS3TR_WriteReg	24	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/LSM6DS3TR/lsm6ds3tr.c:47:13:LSM6DS3TR_WriteRegVerified	24	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/LSM6DS3TR/lsm6ds3tr.c:57:6:LSM6DS3TR_Init	32	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/LSM6DS3TR/lsm6ds3tr.c:94:6:LSM6DS3TR_ReadRaw	32	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/LSM6DS3TR/lsm6ds3tr.c:116:6:LSM6DS3TR_DataReady	24	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/LSM6DS3TR/lsm6ds3tr.c:127:6:LSM6DS3TR_ConvertToPhysical	32	static

@@ -1,0 +1,8 @@
+D:/Education/IMU_v1/IMU_sw/My_drivers/MPU6500/mpu6500.c:12:13:CS_Low	16	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/MPU6500/mpu6500.c:13:13:CS_High	16	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/MPU6500/mpu6500.c:16:13:MPU6500_ReadRegs	32	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/MPU6500/mpu6500.c:29:13:MPU6500_WriteReg	24	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/MPU6500/mpu6500.c:41:6:MPU6500_Init	32	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/MPU6500/mpu6500.c:86:6:MPU6500_ReadRaw	32	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/MPU6500/mpu6500.c:105:6:MPU6500_DataReady	24	static
+D:/Education/IMU_v1/IMU_sw/My_drivers/MPU6500/mpu6500.c:116:6:MPU6500_ConvertToPhysical	32	static

@@ -59,6 +59,12 @@ bool MPU6500_Init(MPU6500_Handle_t *dev, SPI_HandleTypeDef *hspi,
     if (!MPU6500_ReadRegs(dev, MPU6500_REG_WHO_AM_I, &who_am_i, 1)) {
         return false;
     }
+    if (who_am_i != 0x70) return false;
+    /* Clear DATA_RDY only by reading INT_STATUS, not by WHO_AM_I reads. */
+    if (!MPU6500_WriteReg(dev, 0x37, 0x00)) return false;
+    /* Make conversion scales explicit, including after a debugger reset. */
+    if (!MPU6500_WriteReg(dev, 0x1B, 0x00) || !MPU6500_WriteReg(dev, 0x1C, 0x00))
+        return false;
 
     /* CONFIG: DLPF_CFG=3 (~41 Гц полоса, внутренний Fs=1кГц) — без этого DLPF
      * выключен и внутренняя частота гироскопа 8кГц, что заливает EXTI/шину. */
@@ -93,6 +99,17 @@ bool MPU6500_ReadRaw(MPU6500_Handle_t *dev, MPU6500_RawData_t *out)
     out->gyro_raw[1]  = (int16_t)((buf[10] << 8) | buf[11]);
     out->gyro_raw[2]  = (int16_t)((buf[12] << 8) | buf[13]);
 
+    return true;
+}
+
+bool MPU6500_DataReady(MPU6500_Handle_t *dev, bool *ready)
+{
+    uint8_t id = 0, status = 0;
+    *ready = false;
+    if (!MPU6500_ReadRegs(dev, MPU6500_REG_WHO_AM_I, &id, 1) || id != 0x70)
+        return false;
+    if (!MPU6500_ReadRegs(dev, 0x3A, &status, 1)) return false;
+    *ready = (status & 0x01) != 0;
     return true;
 }
 

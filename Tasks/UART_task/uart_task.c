@@ -49,6 +49,7 @@ static void vTask_UART_BodyFunction(void *pvParameters)
 
         FusionOutput_t out;
         if (xQueuePeek(xQueue_FusionOutput, &out, 0) != pdTRUE) continue;
+        if (!out.valid || (uint32_t)(HAL_GetTick() - out.timestamp_ms) > 10) continue;
 
         Protocol_TelemetryData_t telemetry;
         telemetry.timestamp_ms = GetTick64Ms();

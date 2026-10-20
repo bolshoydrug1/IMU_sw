@@ -50,9 +50,12 @@
         "**/.cache/**": true,
         "**/Debug/**": true
     },
-    "cmake.cmakePath": "cmake",
+    "cmake.cmakePath": "cube-cmake",
     "cmake.preferredGenerators": [
         "Ninja"
     ],
-    "stm32cube-ide-clangd.path": "cube"
+    "stm32cube-ide-clangd.path": "cube",
+    "cmake.configureArgs": [
+        "-DCMAKE_COMMAND=cube-cmake"
+    ]
 }

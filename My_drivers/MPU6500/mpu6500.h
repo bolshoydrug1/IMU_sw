@@ -23,6 +23,7 @@ bool MPU6500_Init(MPU6500_Handle_t *dev, SPI_HandleTypeDef *hspi,
                    GPIO_TypeDef *cs_port, uint16_t cs_pin);
 
 bool MPU6500_ReadRaw(MPU6500_Handle_t *dev, MPU6500_RawData_t *out);
+bool MPU6500_DataReady(MPU6500_Handle_t *dev, bool *ready);
 
 void MPU6500_ConvertToPhysical(const MPU6500_Handle_t *dev,
                                 const MPU6500_RawData_t *raw,

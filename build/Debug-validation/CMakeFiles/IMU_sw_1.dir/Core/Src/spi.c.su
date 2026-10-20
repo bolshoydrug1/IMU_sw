@@ -1,0 +1,5 @@
+D:/Education/IMU_v1/IMU_sw/Core/Src/spi.c:32:6:MX_SPI1_Init	8	static
+D:/Education/IMU_v1/IMU_sw/Core/Src/spi.c:64:6:MX_SPI2_Init	8	static
+D:/Education/IMU_v1/IMU_sw/Core/Src/spi.c:96:6:MX_SPI3_Init	8	static
+D:/Education/IMU_v1/IMU_sw/Core/Src/spi.c:128:6:HAL_SPI_MspInit	64	static
+D:/Education/IMU_v1/IMU_sw/Core/Src/spi.c:217:6:HAL_SPI_MspDeInit	16	static

@@ -1,0 +1,3 @@
+D:/Education/IMU_v1/IMU_sw/Protocol/Protocol_IMU.c:5:10:Protocol_ComputeCRC16	24	static
+D:/Education/IMU_v1/IMU_sw/Protocol/Protocol_IMU.c:23:6:Protocol_BuildFrame	32	static
+D:/Education/IMU_v1/IMU_sw/Protocol/Protocol_IMU.c:55:6:Protocol_ParseFrame	40	static

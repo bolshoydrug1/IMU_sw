@@ -20,6 +20,8 @@ typedef struct {
     float gyro_dps[3];      /* усреднено по тем же датчикам, что вошли в q */
     float accel_g[3];
     uint8_t fault_mask;     /* бит0=BMI270, бит1=LSM6DS3TR, бит2=MPU6500 — отбракован голосованием */
+    uint8_t used_mask;      /* Sensors included in this output, same bit order. */
+    bool valid;            /* False when no trustworthy orientation is available. */
     uint32_t timestamp_ms;
 } FusionOutput_t;
 

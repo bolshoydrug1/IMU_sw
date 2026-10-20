@@ -57,6 +57,7 @@ bool BMI270_Init(BMI270_Handle_t *dev, SPI_HandleTypeDef *hspi,
     if (!BMI270_ReadRegs(dev, BMI270_REG_CHIP_ID, &chip_id, 1)) {
         return false;
     }
+    if (chip_id != 0x24) return false;
 
     /* TODO: загрузить init-конфиг (config_file, ~8KB) в регистр FEATURES,
      * дождаться internal_status.message == 0x1 (init OK), только после этого
@@ -64,7 +65,7 @@ bool BMI270_Init(BMI270_Handle_t *dev, SPI_HandleTypeDef *hspi,
      * Без этого шага чип отдаёт мусор или замороженные данные. */
     (void)BMI270_WriteReg;
 
-    return true;
+    return false; /* Not operational until configuration upload is implemented. */
 }
 
 bool BMI270_ReadRaw(BMI270_Handle_t *dev, BMI270_RawData_t *out)

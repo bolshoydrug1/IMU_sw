@@ -1,0 +1,9 @@
+D:/Education/IMU_v1/IMU_sw/Tasks/Filter_task/filter_task.c:30:13:NormalizeQuaternion	32	static
+D:/Education/IMU_v1/IMU_sw/Tasks/Filter_task/filter_task.c:45:13:SeedQuaternion	64	static
+D:/Education/IMU_v1/IMU_sw/Tasks/Filter_task/filter_task.c:64:13:MadgwickUpdateIMU	168	static
+D:/Education/IMU_v1/IMU_sw/Tasks/Filter_task/filter_task.c:117:13:QuaternionToEuler	48	static
+D:/Education/IMU_v1/IMU_sw/Tasks/Filter_task/filter_task.c:135:13:UpdateSensor	72	static
+D:/Education/IMU_v1/IMU_sw/Tasks/Filter_task/filter_task.c:181:13:vTask_Filter_BodyFunction	200	static
+D:/Education/IMU_v1/IMU_sw/Tasks/Filter_task/filter_task.c:283:6:Task_Filter_Start	24	static
+D:/Education/IMU_v1/IMU_sw/Tasks/Filter_task/filter_task.c:305:6:Task_Filter_Stop	8	static
+D:/Education/IMU_v1/IMU_sw/Tasks/Filter_task/filter_task.c:313:6:Task_Filter_IsRunning	8	static
