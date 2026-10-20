@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define PROTOCOL_VERSION   0x01
+#define PROTOCOL_VERSION   0x02 /* Telemetry v2 appends one status byte. */
 #define PROTOCOL_HEAD      0xAA
 #define PROTOCOL_TAIL      0x55
 
@@ -30,6 +30,15 @@ typedef enum {
     PROTOCOL_STATUS_OK    = 0x00,
     PROTOCOL_STATUS_ERROR = 0x01,
 } Protocol_Status_t;
+
+/* Telemetry states are independent of command ACK/NACK statuses.
+ * Append new states with explicit, unique codes in 0x02..0xFF;
+ * never renumber existing codes. On the wire this enum is stored as uint8_t.
+ * Receivers must treat unknown codes as unsupported, not as OK. */
+typedef enum {
+    PROTOCOL_TELEMETRY_STATUS_OK    = 0x00, /* Measurements are usable. */
+    PROTOCOL_TELEMETRY_STATUS_ERROR = 0x01, /* No usable result; measurements are zero. */
+} Protocol_TelemetryStatus_t;
 
 typedef enum {
     PROTOCOL_MODE_100HZ      = 0x00,
@@ -60,7 +69,7 @@ typedef struct {
  * голосования между BMI270/LSM6DS3TR/MPU6500 (см. Task_Filter): усреднение по
  * тем сенсорам, что не отбракованы как расходящиеся с остальными. */
 typedef struct {
-    uint64_t timestamp_ms;  /* метка времени сэмпла: мс с включения устройства (после команды TIME_SYNC — выровнена на часы хоста) */
+    uint64_t timestamp_ms;  /* Время подготовки отправки, мс с запуска. */
 
     float    gyro_x_dps;    /* угловая скорость вокруг оси X, градусы/с (dps) */
     float    gyro_y_dps;    /* угловая скорость вокруг оси Y, градусы/с (dps) */
@@ -76,7 +85,9 @@ typedef struct {
                               * (без магнитометра — это интегрированный курс от
                               * гироскопа, подвержен дрейфу, не абсолютный азимут) */
 
-} Protocol_TelemetryData_t; /* 44 байта: 8 (timestamp) + 4*9 (float-поля) */
+    uint8_t status;         /* Protocol_TelemetryStatus_t encoded as one byte.
+                            * On error all nine float fields are zero. */
+} Protocol_TelemetryData_t; /* v2: 45 bytes, status at payload offset 44. */
 
 /* 0x02 */
 typedef struct {

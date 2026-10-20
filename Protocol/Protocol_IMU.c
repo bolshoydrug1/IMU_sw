@@ -1,6 +1,9 @@
 #include "Protocol_IMU.h"
 #include <string.h>
 
+_Static_assert(sizeof(Protocol_TelemetryData_t) == 45, "Telemetry wire size changed");
+_Static_assert(offsetof(Protocol_TelemetryData_t, status) == 44, "Telemetry status offset changed");
+
 /* CRC-16/CCITT-FALSE: poly=0x1021, init=0xFFFF, без рефлексии на входе/выходе. */
 uint16_t Protocol_ComputeCRC16(const uint8_t *data, uint16_t len)
 {

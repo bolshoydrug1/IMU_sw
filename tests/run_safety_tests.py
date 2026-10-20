@@ -27,6 +27,14 @@ static int xQueuePeek(QueueHandle_t q, IMU_Sample_t *out, int timeout)
 '''
 test = (root / 'tests/test_filter_safety.c').read_text(encoding='utf-8')
 (out / 'filter_test.c').write_text(prelude + helpers + test, encoding='utf-8')
+uart_source = (root / 'Tasks/UART_task/uart_task.c').read_text(encoding='utf-8')
+prepare = uart_source[uart_source.index('static void PrepareTelemetry'):uart_source.index('static void vTask_UART_BodyFunction')]
+filter_header = (root / 'Tasks/Filter_task/filter_task.h').read_text(encoding='utf-8')
+fusion_type = filter_header[filter_header.index('typedef struct {'):filter_header.index('} FusionOutput_t;') + len('} FusionOutput_t;')]
+(out / 'telemetry_test.c').write_text(
+    '#include <math.h>\n#include <string.h>\n#include "Protocol_IMU.h"\n'
+    + fusion_type + '\n' + prepare
+    + (root / 'tests/test_telemetry_status.c').read_text(encoding='utf-8'), encoding='utf-8')
 vcvars = Path(os.environ.get('ProgramFiles', 'C:/Program Files')) / 'Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvars64.bat'
 batch = out / 'run.cmd'
 batch.write_text(f'''@echo off
@@ -38,6 +46,11 @@ filter_test.exe
 if errorlevel 1 exit /b 1
 ''', encoding='utf-8')
 with batch.open('a', encoding='utf-8') as stream:
+    stream.write(f'''cl /nologo /std:c11 /W4 /utf-8 /I"{root / 'Protocol'}" telemetry_test.c "{root / 'Protocol/Protocol_IMU.c'}" /Fe:telemetry_test.exe
+if errorlevel 1 exit /b 1
+telemetry_test.exe
+if errorlevel 1 exit /b 1
+''')
     for name in ('LSM', 'MPU', 'BMI'):
         stream.write(f'''cl /nologo /std:c11 /W4 /utf-8 /DTEST_{name} /I"{root / 'tests/stubs'}" "{root / 'tests/test_driver_safety.c'}" /Fe:driver_{name}.exe
 if errorlevel 1 exit /b 1

@@ -1,6 +1,8 @@
 #include "uart_task.h"
 #include "filter_task.h"
 #include "main.h"
+#include <string.h>
+#include <math.h>
 
 static TaskHandle_t xTask_UARTHandle = NULL;
 static volatile uint8_t s_mode = TASK_UART_DEFAULT_MODE;
@@ -37,6 +39,31 @@ static uint32_t ModeToPeriodMs(uint8_t mode)
     }
 }
 
+/* NULL, invalid, stale or non-finite input still produces an error heartbeat. */
+static void PrepareTelemetry(const FusionOutput_t *out, uint64_t now,
+                             Protocol_TelemetryData_t *telemetry)
+{
+    memset(telemetry, 0, sizeof(*telemetry));
+    telemetry->timestamp_ms = now;
+    telemetry->status = PROTOCOL_TELEMETRY_STATUS_ERROR;
+    if (out == NULL || !out->valid ||
+        (uint32_t)((uint32_t)now - out->timestamp_ms) > 10) return;
+    for (int i = 0; i < 3; ++i)
+        if (!isfinite(out->gyro_dps[i]) || !isfinite(out->accel_g[i])) return;
+    if (!isfinite(out->roll_deg) || !isfinite(out->pitch_deg) ||
+        !isfinite(out->yaw_deg)) return;
+    telemetry->gyro_x_dps = out->gyro_dps[0];
+    telemetry->gyro_y_dps = out->gyro_dps[1];
+    telemetry->gyro_z_dps = out->gyro_dps[2];
+    telemetry->accel_x_g = out->accel_g[0];
+    telemetry->accel_y_g = out->accel_g[1];
+    telemetry->accel_z_g = out->accel_g[2];
+    telemetry->roll_deg = out->roll_deg;
+    telemetry->pitch_deg = out->pitch_deg;
+    telemetry->yaw_deg = out->yaw_deg;
+    telemetry->status = PROTOCOL_TELEMETRY_STATUS_OK;
+}
+
 static void vTask_UART_BodyFunction(void *pvParameters)
 {
     (void)pvParameters;
@@ -48,20 +75,10 @@ static void vTask_UART_BodyFunction(void *pvParameters)
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
 
         FusionOutput_t out;
-        if (xQueuePeek(xQueue_FusionOutput, &out, 0) != pdTRUE) continue;
-        if (!out.valid || (uint32_t)(HAL_GetTick() - out.timestamp_ms) > 10) continue;
-
+        bool available = xQueue_FusionOutput != NULL &&
+                         xQueuePeek(xQueue_FusionOutput, &out, 0) == pdTRUE;
         Protocol_TelemetryData_t telemetry;
-        telemetry.timestamp_ms = GetTick64Ms();
-        telemetry.gyro_x_dps = out.gyro_dps[0];
-        telemetry.gyro_y_dps = out.gyro_dps[1];
-        telemetry.gyro_z_dps = out.gyro_dps[2];
-        telemetry.accel_x_g = out.accel_g[0];
-        telemetry.accel_y_g = out.accel_g[1];
-        telemetry.accel_z_g = out.accel_g[2];
-        telemetry.roll_deg = out.roll_deg;
-        telemetry.pitch_deg = out.pitch_deg;
-        telemetry.yaw_deg = out.yaw_deg;
+        PrepareTelemetry(available ? &out : NULL, GetTick64Ms(), &telemetry);
 
         uint8_t frameBuf[PROTOCOL_OVERHEAD_BYTES + sizeof(Protocol_TelemetryData_t)];
         uint16_t frameLen;
@@ -70,7 +87,7 @@ static void vTask_UART_BodyFunction(void *pvParameters)
             continue;
         }
 
-        /* TODO: перейти на HAL_UART_Transmit_DMA — при 500Гц и ~52 байта/пакет
+        /* TODO: перейти на HAL_UART_Transmit_DMA — при 500Гц и 53 байта/пакет
          * блокирующая передача занимает заметную долю 2мс-бюджета задачи.
          * Нужно включить DMA TX для USART1 в CubeMX (Connectivity -> USART1
          * -> DMA Settings -> Add -> USART1_TX).

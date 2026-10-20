@@ -1,7 +1,8 @@
-D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:13:17:GetTick64Ms	40	static
-D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:29:17:ModeToPeriodMs	16	static
-D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:40:13:vTask_UART_BodyFunction	192	static
-D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:84:6:Task_UART_Start	24	static
-D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:103:6:Task_UART_Stop	8	static
-D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:111:6:Task_UART_IsRunning	8	static
-D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:118:6:Task_UART_SetMode	16	static
+D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:15:17:GetTick64Ms	40	static
+D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:31:17:ModeToPeriodMs	16	static
+D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:43:13:PrepareTelemetry	32	static
+D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:67:13:vTask_UART_BodyFunction	216	static
+D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:101:6:Task_UART_Start	24	static
+D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:120:6:Task_UART_Stop	8	static
+D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:128:6:Task_UART_IsRunning	8	static
+D:/Education/IMU_v1/IMU_sw/Tasks/UART_task/uart_task.c:135:6:Task_UART_SetMode	16	static
