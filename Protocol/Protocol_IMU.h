@@ -15,6 +15,13 @@
 #define PROTOCOL_ASCII_MAX_LEN   64
 #define PROTOCOL_RESET_MAGIC     0xDEADBEEFu
 
+/* Приём от хоста: заведомо больше любого штатного запроса (MODE_CONFIG — 1
+ * байт, TIME_SYNC — 8), но достаточно мало, чтобы отбрасывать заоморфленные
+ * кадры с абсурдной длиной до записи в буфер парсера. */
+#define PROTOCOL_RX_MAX_PAYLOAD 64u
+/* Maximum gap between received bytes of one command (not task polling time). */
+#define PROTOCOL_RX_FRAME_TIMEOUT_MS 20u
+
 typedef enum {
     PROTOCOL_TYPE_TELEMETRY   = 0x01, /* device<->host: запрос (length=0) / данные */
     PROTOCOL_TYPE_ACK_NACK    = 0x02, /* device->host: подтверждение команды */
@@ -44,9 +51,18 @@ typedef enum {
     PROTOCOL_MODE_100HZ      = 0x00,
     PROTOCOL_MODE_250HZ      = 0x01,
     PROTOCOL_MODE_500HZ      = 0x02,
-    PROTOCOL_MODE_1000HZ     = 0x03,
+    /* 0x03 (1000Гц) устройством не поддерживается и не переиспользуется:
+     * старые пакеты хоста должны отклоняться NACK, а не молча означать
+     * другой режим. */
     PROTOCOL_MODE_ON_REQUEST = 0x04, /* не слать самостоятельно, только отвечать на TELEMETRY-запрос */
 } Protocol_Mode_t;
+
+/* Поддерживается ли режим устройством (периодический или ON_REQUEST). */
+bool Protocol_ModeIsSupported(uint8_t mode);
+
+/* Период самостоятельной отправки телеметрии, мс. Возвращает false для
+ * ON_REQUEST (отправка только по запросу) и неподдерживаемых значений. */
+bool Protocol_TelemetryPeriodMs(uint8_t mode, uint16_t *outPeriodMs);
 
 /* Фиксированная часть кадра перед payload'ом (5 байт). CRC и tail идут
  * после payload переменной длины, поэтому не входят в этот struct — см.
@@ -82,8 +98,8 @@ typedef struct {
     float    roll_deg;      /* крен — поворот вокруг продольной оси X, градусы */
     float    pitch_deg;     /* тангаж — поворот вокруг поперечной оси Y, градусы */
     float    yaw_deg;       /* рыскание — поворот вокруг вертикальной оси Z, градусы
-                              * (без магнитометра — это интегрированный курс от
-                              * гироскопа, подвержен дрейфу, не абсолютный азимут) */
+                             * (без магнитометра — это интегрированный курс от
+                             * гироскопа, подвержен дрейфу, не абсолютный азимут) */
 
     float temperature_c;   /* Filtered mean of usable sensor temperatures, Celsius. */
     uint8_t status;         /* Protocol_TelemetryStatus_t encoded as one byte.
@@ -153,5 +169,40 @@ bool Protocol_BuildFrame(uint8_t *outBuf, uint16_t outBufCap, uint8_t type,
 bool Protocol_ParseFrame(const uint8_t *buf, uint16_t bufLen,
                           Protocol_Header_t *outHeader,
                           const uint8_t **outPayload);
+
+/* ---- Инкрементальный разбор потока кадров из UART (приём команд) ----
+ * Кормится по одному байту; буфер кадра принадлежит парсеру, поэтому разбор
+ * не зависит от размера кольцевого буфера UART и тестируется на хосте. */
+typedef enum {
+    PROTOCOL_RX_NEED_MORE = 0, /* кадр ещё не собран целиком */
+    PROTOCOL_RX_FRAME_OK,      /* собран валидный кадр, header заполнен */
+    PROTOCOL_RX_FRAME_BAD,     /* кадр собран целиком, но CRC/tail не сошлись */
+    PROTOCOL_RX_OVERFLOW,      /* заявленная длина payload не влезает в буфер */
+} Protocol_RxResult_t;
+
+typedef struct {
+    uint8_t  buf[PROTOCOL_OVERHEAD_BYTES + PROTOCOL_RX_MAX_PAYLOAD];
+    uint16_t len;
+    uint32_t last_byte_ms; /* Used by Protocol_RxParserFeedTimed. */
+    /* Заполняется только вместе с PROTOCOL_RX_FRAME_OK. */
+    Protocol_Header_t header;
+} Protocol_RxParser_t;
+
+/* Payload последнего кадра; начинается сразу за заголовком в buf парсера.
+ * Действителен только до следующего вызова Protocol_RxParserFeed — кадр
+ * нужно обработать сразу после получения PROTOCOL_RX_FRAME_OK. */
+#define Protocol_RxParserPayload(parser) ((parser)->buf + sizeof(Protocol_Header_t))
+
+void Protocol_RxParserReset(Protocol_RxParser_t *parser);
+
+/* Feeds one byte without timing. Noise before 0xAA is ignored. After a bad
+ * CRC/tail/length, retains a possible following header from buffered bytes.
+ * After FRAME_OK, payload must be handled before the next call. */
+Protocol_RxResult_t Protocol_RxParserFeed(Protocol_RxParser_t *parser, uint8_t byte);
+
+/* Uses byte arrival times, handles tick wrap and discards an incomplete frame
+ * after an inter-byte gap greater than PROTOCOL_RX_FRAME_TIMEOUT_MS. */
+Protocol_RxResult_t Protocol_RxParserFeedTimed(Protocol_RxParser_t *parser,
+                                             uint8_t byte, uint32_t receivedMs);
 
 #endif /* PROTOCOL_PROTOCOL_IMU_H_ */

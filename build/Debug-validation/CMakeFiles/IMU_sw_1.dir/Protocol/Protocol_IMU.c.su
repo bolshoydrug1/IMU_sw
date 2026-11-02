@@ -1,3 +1,9 @@
 D:/Education/IMU_v1/IMU_sw/Protocol/Protocol_IMU.c:9:10:Protocol_ComputeCRC16	24	static
 D:/Education/IMU_v1/IMU_sw/Protocol/Protocol_IMU.c:27:6:Protocol_BuildFrame	32	static
 D:/Education/IMU_v1/IMU_sw/Protocol/Protocol_IMU.c:59:6:Protocol_ParseFrame	40	static
+D:/Education/IMU_v1/IMU_sw/Protocol/Protocol_IMU.c:102:6:Protocol_ModeIsSupported	16	static
+D:/Education/IMU_v1/IMU_sw/Protocol/Protocol_IMU.c:115:6:Protocol_TelemetryPeriodMs	24	static
+D:/Education/IMU_v1/IMU_sw/Protocol/Protocol_IMU.c:130:6:Protocol_RxParserReset	16	static
+D:/Education/IMU_v1/IMU_sw/Protocol/Protocol_IMU.c:138:13:RxParserResync	24	static
+D:/Education/IMU_v1/IMU_sw/Protocol/Protocol_IMU.c:146:21:Protocol_RxParserFeed	32	static
+D:/Education/IMU_v1/IMU_sw/Protocol/Protocol_IMU.c:184:21:Protocol_RxParserFeedTimed	32	static

@@ -28,7 +28,7 @@ bool Protocol_BuildFrame(uint8_t *outBuf, uint16_t outBufCap, uint8_t type,
                           const uint8_t *payload, uint16_t payloadLen,
                           uint16_t *outFrameLen)
 {
-    uint16_t frameLen = (uint16_t)(PROTOCOL_OVERHEAD_BYTES + payloadLen);
+    uint32_t frameLen = (uint32_t)PROTOCOL_OVERHEAD_BYTES + payloadLen;
     if (frameLen > outBufCap) {
         return false;
     }
@@ -50,7 +50,7 @@ bool Protocol_BuildFrame(uint8_t *outBuf, uint16_t outBufCap, uint8_t type,
     outBuf[5 + payloadLen + 2] = PROTOCOL_TAIL;
 
     if (outFrameLen) {
-        *outFrameLen = frameLen;
+        *outFrameLen = (uint16_t)frameLen;
     }
 
     return true;
@@ -71,7 +71,7 @@ bool Protocol_ParseFrame(const uint8_t *buf, uint16_t bufLen,
     uint8_t version = buf[2];
     uint16_t length = (uint16_t)buf[3] | ((uint16_t)buf[4] << 8);
 
-    uint16_t expectedFrameLen = (uint16_t)(PROTOCOL_OVERHEAD_BYTES + length);
+    uint32_t expectedFrameLen = (uint32_t)PROTOCOL_OVERHEAD_BYTES + length;
     if (bufLen < expectedFrameLen) {
         return false; /* кадр ещё не пришёл целиком */
     }
@@ -97,4 +97,97 @@ bool Protocol_ParseFrame(const uint8_t *buf, uint16_t bufLen,
     }
 
     return true;
+}
+
+bool Protocol_ModeIsSupported(uint8_t mode)
+{
+    switch (mode) {
+        case PROTOCOL_MODE_100HZ:
+        case PROTOCOL_MODE_250HZ:
+        case PROTOCOL_MODE_500HZ:
+        case PROTOCOL_MODE_ON_REQUEST:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool Protocol_TelemetryPeriodMs(uint8_t mode, uint16_t *outPeriodMs)
+{
+    uint16_t period;
+    switch (mode) {
+        case PROTOCOL_MODE_100HZ:  period = 10; break;
+        case PROTOCOL_MODE_250HZ:  period = 4;  break;
+        case PROTOCOL_MODE_500HZ:  period = 2;  break;
+        default: return false; /* ON_REQUEST и неизвестные — периода нет */
+    }
+    if (outPeriodMs) {
+        *outPeriodMs = period;
+    }
+    return true;
+}
+
+void Protocol_RxParserReset(Protocol_RxParser_t *parser)
+{
+    parser->len = 0;
+    parser->last_byte_ms = 0;
+}
+
+/* Retain a possible next header after a bad candidate. Never restart on 0xAA
+ * inside a still-valid candidate: payload bytes may contain any value. */
+static void RxParserResync(Protocol_RxParser_t *parser)
+{
+    uint16_t offset = 1;
+    while (offset < parser->len && parser->buf[offset] != PROTOCOL_HEAD) ++offset;
+    parser->len = (uint16_t)(parser->len - offset);
+    memmove(parser->buf, parser->buf + offset, parser->len);
+}
+
+Protocol_RxResult_t Protocol_RxParserFeed(Protocol_RxParser_t *parser, uint8_t byte)
+{
+    /* Поиск начала кадра: всё, что не 0xAA, до этого момента — шум. */
+    if (parser->len == 0) {
+        if (byte != PROTOCOL_HEAD) {
+            return PROTOCOL_RX_NEED_MORE;
+        }
+        parser->buf[0] = byte;
+        parser->len = 1;
+        return PROTOCOL_RX_NEED_MORE;
+    }
+
+    parser->buf[parser->len++] = byte;
+
+    Protocol_RxResult_t result = PROTOCOL_RX_NEED_MORE;
+    while (parser->len >= sizeof(Protocol_Header_t)) {
+        uint16_t payloadLen = (uint16_t)parser->buf[3] | ((uint16_t)parser->buf[4] << 8);
+        /* Check payload before addition, including lengths near UINT16_MAX. */
+        if (payloadLen > PROTOCOL_RX_MAX_PAYLOAD) {
+            result = PROTOCOL_RX_OVERFLOW;
+            RxParserResync(parser);
+            continue;
+        }
+        uint16_t frameLen = (uint16_t)(PROTOCOL_OVERHEAD_BYTES + payloadLen);
+        if (parser->len < frameLen) break;
+
+        Protocol_Header_t header;
+        if (Protocol_ParseFrame(parser->buf, frameLen, &header, NULL)) {
+            Protocol_RxParserReset(parser);
+            parser->header = header;
+            return PROTOCOL_RX_FRAME_OK;
+        }
+        result = PROTOCOL_RX_FRAME_BAD;
+        RxParserResync(parser);
+    }
+    return result;
+}
+
+Protocol_RxResult_t Protocol_RxParserFeedTimed(Protocol_RxParser_t *parser,
+                                             uint8_t byte, uint32_t receivedMs)
+{
+    if (parser->len != 0 &&
+        (uint32_t)(receivedMs - parser->last_byte_ms) > PROTOCOL_RX_FRAME_TIMEOUT_MS)
+        Protocol_RxParserReset(parser);
+    Protocol_RxResult_t result = Protocol_RxParserFeed(parser, byte);
+    parser->last_byte_ms = receivedMs;
+    return result;
 }

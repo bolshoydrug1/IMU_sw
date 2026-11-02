@@ -22,6 +22,7 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "uart_task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -216,5 +217,14 @@ void TIM1_UP_TIM10_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-
+/**
+  * @brief This function handles USART1 global interrupt.
+  *
+  * Только приём (RXNE) — передача остаётся блокирующей в Task_UART.
+  * Обработка вынесена в задачу, чтобы ISR не трогал HAL и FreeRTOS API.
+  */
+void USART1_IRQHandler(void)
+{
+  Task_UART_RxIsrHandler();
+}
 /* USER CODE END 1 */

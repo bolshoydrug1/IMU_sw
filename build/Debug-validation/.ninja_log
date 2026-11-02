@@ -67,3 +67,13 @@
 510	807	8142110575784957	IMU_sw_1.elf	4cb5cb27a1f57570
 27	329	8142111199203380	CMakeFiles/IMU_sw_1.dir/Tasks/Filter_task/filter_task.c.obj	d8a7039764d33377
 329	623	8142111202036687	IMU_sw_1.elf	4cb5cb27a1f57570
+128	352	8152342231968441	CMakeFiles/IMU_sw_1.dir/Protocol/Protocol_IMU.c.obj	3acb19f1ca7068d9
+122	505	8152342233498528	CMakeFiles/IMU_sw_1.dir/Core/Src/stm32f4xx_it.c.obj	f9cf9e252035f0d8
+113	526	8152342233714500	CMakeFiles/IMU_sw_1.dir/Core/Src/main.c.obj	8d2dcbd6578acd25
+135	537	8152342233819975	CMakeFiles/IMU_sw_1.dir/Tasks/UART_task/uart_task.c.obj	92fc268156ddb1da
+537	1208	8152342240431209	IMU_sw_1.elf	4cb5cb27a1f57570
+51	392	8152346374802430	CMakeFiles/IMU_sw_1.dir/Protocol/Protocol_IMU.c.obj	3acb19f1ca7068d9
+43	531	8152346376193190	CMakeFiles/IMU_sw_1.dir/Core/Src/stm32f4xx_it.c.obj	f9cf9e252035f0d8
+34	560	8152346376494377	CMakeFiles/IMU_sw_1.dir/Core/Src/main.c.obj	8d2dcbd6578acd25
+60	597	8152346376848259	CMakeFiles/IMU_sw_1.dir/Tasks/UART_task/uart_task.c.obj	92fc268156ddb1da
+598	986	8152346380593756	IMU_sw_1.elf	4cb5cb27a1f57570
