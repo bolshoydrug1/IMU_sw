@@ -34,6 +34,11 @@ enable_language(C ASM)
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
 
+# A linker-script edit must trigger relinking even when sources are unchanged.
+set_property(TARGET ${CMAKE_PROJECT_NAME} APPEND PROPERTY LINK_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/STM32F401XX_FLASH.ld"
+)
+
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 

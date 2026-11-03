@@ -56,8 +56,19 @@ ENTRY(Reset_Handler)
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 64K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 256K
+/* Sectors 0-1: keep the boot vector table at the hardware reset address. */
+FLASH_VECTORS (rx) : ORIGIN = 0x08000000, LENGTH = 32K
+/* Sector 2: reserved for the calibration journal. No output sections. */
+CALIB (r)      : ORIGIN = 0x08008000, LENGTH = 16K
+/* Sectors 3-5: code, constants and initial values copied to RAM. */
+FLASH (rx)     : ORIGIN = 0x0800C000, LENGTH = 208K
 }
+
+/* Absolute addresses for the future Flash driver; end addresses are exclusive.
+ * No bytes/NOLOAD allocations are emitted for the calibration area. */
+__calib_flash_start__ = ORIGIN(CALIB);
+__calib_flash_end__ = ORIGIN(CALIB) + LENGTH(CALIB);
+__calib_flash_size__ = LENGTH(CALIB);
 
 /* Highest address of the user mode stack */
 _estack = ORIGIN(RAM) + LENGTH(RAM);    /* end of RAM */
@@ -69,13 +80,13 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Define output sections */
 SECTIONS
 {
-  /* The startup code goes first into FLASH */
+  /* Only the vector table stays at 0x08000000; Reset_Handler is in FLASH. */
   .isr_vector :
   {
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >FLASH
+  } >FLASH_VECTORS
 
   /* The program code and other data goes into FLASH */
   .text :
@@ -248,3 +259,9 @@ SECTIONS
   }
 
 }
+
+ASSERT(ADDR(.isr_vector) == ORIGIN(FLASH_VECTORS), "Vector table must stay at 0x08000000")
+ASSERT(SIZEOF(.isr_vector) >= 8, "Boot vector table is missing")
+ASSERT(ADDR(.text) >= ORIGIN(FLASH), "Code must be above the calibration sectors")
+ASSERT(LOADADDR(.data) >= ORIGIN(FLASH), "RAM initializers must not occupy calibration sectors")
+ASSERT(LOADADDR(.tdata) + SIZEOF(.tdata) <= ORIGIN(FLASH) + LENGTH(FLASH), "Flash initializers exceed device capacity")
